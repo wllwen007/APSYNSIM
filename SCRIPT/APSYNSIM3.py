@@ -205,6 +205,8 @@ class Interferometer(object):
         self.lfac = 1.e6  # Lambda units (i.e., 1.e6 => Mlambda)
         self.ulab = r'U (M$\lambda$)'
         self.vlab = r'V (M$\lambda$)'
+        self.wavfac = 1.e3  # converts wavelength in km to wlab units
+        self.wavlab = r'm'
         self.W2W1 = 1.0  # Relative weighting for subarrays.
         self.currcmap = cm.jet
 
@@ -320,8 +322,8 @@ class Interferometer(object):
         self.dirtyPlot = self.figUV.add_subplot(236, aspect='equal')
 
         self.spherePlot = pl.axes([0.53, 0.82, 0.12, 0.12],
-                                  projection='3d',
-                                  aspect='equal')
+                                  projection='3d')
+                                  #aspect='equal')
 
         u = np.linspace(0, 2 * np.pi, 100)
         v = np.linspace(0, np.pi, 100)
@@ -368,7 +370,7 @@ class Interferometer(object):
         self.fmtA = 'N = %i'
         self.fmtA2 = '  Picked Ant. #%i'
         self.fmtA3 = '\n%6.1fm | %6.1fm'
-        fmtB1 = r'$\lambda = $ %4.1fmm  ' % (self.wavelength[2] * 1.e6)
+        fmtB1 = r'$\lambda = $ %4.1f%s  ' % (self.wavelength[2] * self.wavfac, self.wavlab)
         self.fmtB = fmtB1 + "\n" + r'% 4.2f Jy/beam' + "\n" + r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
         self.fmtD = r'% .2e Jy/beam' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
         self.fmtM = r'%.2e Jy/pixel' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f'
@@ -420,10 +422,10 @@ class Interferometer(object):
                                    12.,
                                    valinit=self.Hcov[1] / self.Hfac)
         self.widget['wave'] = Slider(self.wax['wave'],
-                                     r'$\lambda$ (mm)',
-                                     self.wavelength[0] * 1.e6,
-                                     self.wavelength[1] * 1.e6,
-                                     valinit=self.wavelength[2] * 1.e6)
+                                     r'$\lambda$ ('+self.wavlab+r')',
+                                     self.wavelength[0] * self.wavfac,
+                                     self.wavelength[1] * self.wavfac,
+                                     valinit=self.wavelength[2] * self.wavfac)
         self.widget['add'] = Button(self.wax['add'], r'+ Antenna')
         self.widget['rem'] = Button(self.wax['rem'], r'$-$ Antenna')
         self.widget['reduce'] = Button(self.wax['reduce'], r'Reduce data')
@@ -692,8 +694,8 @@ class Interferometer(object):
         if not self.GUIres:
             return
 
-        self.wavelength[2] = wave * 1.e-6
-        fmtB1 = r'$\lambda = $ %4.1fmm  ' % (self.wavelength[2] * 1.e6)
+        self.wavelength[2] = wave / self.wavfac
+        fmtB1 = r'$\lambda = $ %4.1f%s  ' % (self.wavelength[2] * self.wavfac, self.wavlab)
         self.fmtB = fmtB1 + "\n" r'% 4.2f Jy/beam' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
 
         self._setPrimaryBeam(replotFFT=True)
@@ -2014,12 +2016,12 @@ class Interferometer(object):
                 self.widget['H1'].set_val(self.Hcov[1] / self.Hfac)
                 self.wax['wave'].cla()
                 self.widget['wave'] = Slider(self.wax['wave'],
-                                             r'$\lambda$ (mm)',
-                                             self.wavelength[0] * 1.e6,
-                                             self.wavelength[1] * 1.e6,
-                                             valinit=self.wavelength[2] * 1.e6)
+                                             r'$\lambda$ ('+self.wavlab+r')',
+                                             self.wavelength[0] * self.wavfac,
+                                             self.wavelength[1] * self.wavfac,
+                                             valinit=self.wavelength[2] * self.wavfac)
                 self.widget['wave'].on_changed(self._changeWavelength)
-                self.widget['wave'].set_val(self.wavelength[2] * 1.e6)
+                self.widget['wave'].set_val(self.wavelength[2] * self.wavfac)
                 self.GUIres = True
 
                 self._prepareBaselines()
@@ -2028,7 +2030,7 @@ class Interferometer(object):
                 self._plotAntennas(redo=True, rescale=True)
                 self._plotModel(redo=True)
                 self._changeCoordinates(redoUV=True)
-                self.widget['wave'].set_val(self.wavelength[2] * 1.e6)
+                self.widget['wave'].set_val(self.wavelength[2] * self.wavfac)
 
                 pl.draw()
                 self.canvas.draw()
